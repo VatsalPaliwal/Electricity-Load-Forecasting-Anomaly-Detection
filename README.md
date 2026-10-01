@@ -1,28 +1,30 @@
 # Electricity-Load-Forecasting-Anomaly-Detection
 
-An end-to-end MLOps pipeline that forecasts hourly electricity demand for the
-PJM East interconnection and tests whether unsupervised anomaly detection
-can improve that forecast — with a historical replay simulation standing in
-for live grid data.
+An end-to-end MLOps pipeline for forecasting hourly electricity demand on
+the PJM East interconnection, with a residual-based anomaly detection
+layer evaluated as an additional forecasting input. A historical replay
+simulation (sequential reveal over 2017–2018) stands in for live grid data
+ingestion.
 
-## Project Motivation
+## Overview
 
-This started as a straightforward anomaly detection project, built to fill a
-genuine gap in my ML portfolio (previous projects — fraud detection, an
-anime recommender via SVD — were supervised or matrix-factorization based;
-this was my first unsupervised project). The original plan was to build a
-live, self-updating pipeline against real-time PJM/ERCOT grid APIs.
+The project forecasts hourly load (`PJME_MW`) using XGBoost, and
+separately trains an Isolation Forest to detect anomalous demand periods.
+The central question the project investigates: **does information about
+recent anomalies improve forecast accuracy, particularly around anomalous
+periods themselves?** Two XGBoost variants — a baseline model and an
+anomaly-aware model — are trained under identical conditions and compared
+on this basis.
 
-Live ingestion failed repeatedly — a broken PJM API signup, failing
-`gridstatus` calls, and a 403 from the ERCOT fallback. After three
-consecutive failures, I made a deliberate pivot: instead of live ingestion,
-the project replays 2017–2018 sequentially (predict → reveal actual →
-score → update state → next), which preserves the "live-feeling" system
-goal without depending on flaky external APIs. The scope also expanded from
-pure anomaly detection into **forecasting + anomaly-aware forecasting**,
-turning the project into a test of a specific hypothesis: *does knowing
-about recent anomalies help a forecasting model do better, especially
-around anomalous periods?*
+The pipeline was originally scoped around live ingestion from PJM and
+ERCOT grid APIs. After repeated upstream API failures (a broken signup
+flow, failing `gridstatus` calls, and a 403 from the ERCOT fallback), the
+design was revised to use a historical replay simulation instead —
+sequentially revealing 2017–2018 data (predict → reveal actual → score →
+update state → next) to preserve a live-feeling system without depending
+on unreliable external APIs. The scope also expanded from standalone
+anomaly detection into a forecasting pipeline with anomaly-aware features
+as a tested hypothesis rather than an assumed improvement.
 
 ## Data
 
@@ -245,30 +247,22 @@ Streamlit, SQLite.
 
 ## Project Status
 
-**Completed**
-- EDA (structure/integrity, seasonality at 3 levels, holiday effect, ACF/PACF,
-  MSTL decomposition validated against the August 2006 heat wave)
-- `preprocessing.py` — 8 EDA-justified features
-- Chronological split (train 2002–2014 / val 2015–2016 / test 2017–2018),
-  committed to `train_data` / `val_data` / `test_data`
-- Isolation Forest (original, full-data version) — validated against the
-  August 2006 heat wave and its own feature-comparison table
-- Isolation Forest retrained on `train` only; `generate_features.py`
-  produces `anomaly_score`, `is_anomaly`, `anomaly_score_24h_mean`,
-  `anomaly_score_24h_max` for `train` + `val`
-- Seasonal-naive baselines (previous-day, previous-week) scored on `val`
-- Baseline XGBoost (8 features) trained on `train`, scored on `val`
-- Anomaly-aware XGBoost (8 features + 2 rolling anomaly features) trained
-  on `train`, scored on `val`
-- Monthly MAE/RMSE stability comparison between the two XGBoost variants
+### ✅ Completed
+- [x] EDA (structure/integrity, seasonality at 3 levels, holiday effect, ACF/PACF, MSTL decomposition validated against the August 2006 heat wave)
+- [x] `preprocessing.py` — 8 EDA-justified features
+- [x] Chronological split (train 2002–2014 / val 2015–2016 / test 2017–2018), committed to `train_data` / `val_data` / `test_data`
+- [x] Isolation Forest (original, full-data version) — validated against the August 2006 heat wave and its own feature-comparison table
+- [x] Isolation Forest retrained on `train` only; `generate_features.py` produces `anomaly_score`, `is_anomaly`, `anomaly_score_24h_mean`, `anomaly_score_24h_max` for `train` + `val`
+- [x] Seasonal-naive baselines (previous-day, previous-week) scored on `val`
+- [x] Baseline XGBoost (8 features) trained on `train`, scored on `val`
+- [x] Anomaly-aware XGBoost (8 features + 2 rolling anomaly features) trained on `train`, scored on `val`
+- [x] Monthly MAE/RMSE stability comparison between the two XGBoost variants
 
-**Left to do**
-- Final modelling decisions (baseline vs. anomaly-aware, including the
-  anomalous-period-specific comparison and feature importance)
-- Final test run (untouched 2017–2018 evaluation)
-- Wrap up the full pipeline (replay simulation, drift monitoring,
-  MLflow/FastAPI/Docker)
-- Streamlit frontend
+### 🚧 Left to do
+- [ ] Final modelling decisions (baseline vs. anomaly-aware, including the anomalous-period-specific comparison and feature importance)
+- [ ] Final test run (untouched 2017–2018 evaluation)
+- [ ] Wrap up the full pipeline (replay simulation, drift monitoring, MLflow/FastAPI/Docker)
+- [ ] Streamlit frontend
 
 ## Acknowledgments
 
