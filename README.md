@@ -243,6 +243,33 @@ Streamlit, SQLite.
   features (lags + calendar) was discussed as a natural extension but not
   implemented.
 
+## Project Status
+
+**Completed**
+- EDA (structure/integrity, seasonality at 3 levels, holiday effect, ACF/PACF,
+  MSTL decomposition validated against the August 2006 heat wave)
+- `preprocessing.py` — 8 EDA-justified features
+- Chronological split (train 2002–2014 / val 2015–2016 / test 2017–2018),
+  committed to `train_data` / `val_data` / `test_data`
+- Isolation Forest (original, full-data version) — validated against the
+  August 2006 heat wave and its own feature-comparison table
+- Isolation Forest retrained on `train` only; `generate_features.py`
+  produces `anomaly_score`, `is_anomaly`, `anomaly_score_24h_mean`,
+  `anomaly_score_24h_max` for `train` + `val`
+- Seasonal-naive baselines (previous-day, previous-week) scored on `val`
+- Baseline XGBoost (8 features) trained on `train`, scored on `val`
+- Anomaly-aware XGBoost (8 features + 2 rolling anomaly features) trained
+  on `train`, scored on `val`
+- Monthly MAE/RMSE stability comparison between the two XGBoost variants
+
+**Left to do**
+- Final modelling decisions (baseline vs. anomaly-aware, including the
+  anomalous-period-specific comparison and feature importance)
+- Final test run (untouched 2017–2018 evaluation)
+- Wrap up the full pipeline (replay simulation, drift monitoring,
+  MLflow/FastAPI/Docker)
+- Streamlit frontend
+
 ## Acknowledgments
 
 Dataset: [PJM Hourly Energy Consumption](https://www.kaggle.com/datasets/robikscube/hourly-energy-consumption)
